@@ -255,7 +255,7 @@ public class professor_button1 extends JFrame {
                 //교실 정보를 선택한 경우
                 if(usage.equals("교실")) searchClassroomInfo(seats, cameraType, content, project, reservation, recording, practicable);
                 //교실 외의 정보를 선택한 경우
-                if(usage.equals("교실 외")) searchClassroom_ExternalInfo(seats, content, project, reservation, recording, content);
+                if(usage.equals("교실 외")) searchClassroom_ExternalInfo(seats, content, project, reservation, recording, practicable);
 
 
                 // 새로운 창을 열어 결과를 보여줌
@@ -341,12 +341,43 @@ public class professor_button1 extends JFrame {
 
 
 
-    //교실 외 정보를 찾는 함수
-    private void searchClassroom_ExternalInfo(String seats, boolean content, boolean project, boolean reservation, boolean recording, boolean particable) {
+    // 교실 외 정보를 찾는 함수
+    private void searchClassroom_ExternalInfo(String seats, boolean content, boolean project, boolean reservation, boolean recording, boolean practicable) {
+        StringBuilder warnMessage = new StringBuilder();
 
-        String query = buildQuery(content, project, reservation, recording, practicable, 1, cameraType); //빔프로젝트나 컴퓨터 실습을 원하는 상황이 아닌경우 쿼리를 만드는 함수를 호출
-        executeQuery(seats, query, 1);//쿼리 실행
+        //3중 if문으로 3가지 체크박스 선택할 경우 처리
+        if (recording) {
+            warnMessage.append("녹화를 원한다면 교실을 선택해 주세요.");
+            if (project) {
+                warnMessage.append("\n빔프로젝트를 원한다면 교실을 선택해 주세요.");
+                if (practicable) {
+                    warnMessage.append("\n실습을 원한다면 교실을 선택해 주세요.");
+                }
+            } else if (project) {
+                warnMessage.append("빔프로젝트를 원한다면 교실을 선택해 주세요.");
+                if (practicable) {
+                    warnMessage.append("\n실습을 원한다면 교실을 선택해 주세요.");
+                }
+            } else if (practicable) {
+                warnMessage.append("실습을 원한다면 교실을 선택해 주세요.");
+            }
+
+            if (warnMessage.length() > 0) {
+                infoArea.setText(warnMessage.toString().trim());
+                return;
+            }
+
+            String query = buildQuery(content, project, reservation, recording, practicable, 1, cameraType); // 카메라 유형 추가하여 쿼리 생성
+            executeQuery(seats, query, 1); // 쿼리 실행
+        }
     }
+
+
+
+
+
+
+
 
     private String buildQuery(boolean content, boolean project, boolean reservation, boolean recording, boolean practicable, int type, String cameraType) {
         StringBuilder query = new StringBuilder("SELECT * FROM ");
