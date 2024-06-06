@@ -1,5 +1,5 @@
 //관리자 코드 
-package mainFrame;
+package administrator;
 
 import javax.swing.table.DefaultTableModel;
 

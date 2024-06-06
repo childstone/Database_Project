@@ -8,6 +8,7 @@ import javax.swing.border.EmptyBorder; // 빈 테두리 관련 패키지 가져�
 import javax.swing.table.DefaultTableCellRenderer; // 테이블 셀 렌더러 관련 패키지 가져오기
 import java.sql.*; // SQL 패키지 가져오기
 import java.util.Calendar; // 캘린더 클래스 가져오기
+import javax.swing.border.TitledBorder; // 테두리 관련 패키지 가져오기
 
 public class professor_button2 extends JFrame {
 
@@ -16,6 +17,7 @@ public class professor_button2 extends JFrame {
     private JTable lectureTable; // 강의 테이블
     private JTextArea professorInfoArea; // 교수 정보 영역
     private Connection connection; // 데이터베이스 연결 객체
+    private JLabel currentClassInfoLabel; // 현재 교시 수업 정보 라벨
 
     /**
      * 애플리케이션 실행 메서드
@@ -129,10 +131,27 @@ public class professor_button2 extends JFrame {
             data[i][0] = String.valueOf(i + 1); // 교시 번호 설정
         }
         lectureTable = new JTable(data, columnNames); // 테이블 생성
+        lectureTable.setBounds(100, 100, 1100, 800);
         lectureTable.setFont(new Font("맑은 고딕", Font.PLAIN, 20)); // 폰트 설정
-        lectureTable.setRowHeight(50); // 행 높이 설정
+        lectureTable.setRowHeight(30); // 행 높이 설정
         JScrollPane scrollPane = new JScrollPane(lectureTable); // 스크롤 패널 생성
         contentPane.add(scrollPane, BorderLayout.CENTER); // 메인 패널에 스크롤 패널 추가
+
+        // 강의 테이블 아래에 현재 교시 수업 정보를 표시하는 패널 생성
+        JPanel infoPanel = new JPanel(new BorderLayout());
+        infoPanel.setBackground(Color.WHITE);
+        infoPanel.setBorder(new TitledBorder("현재 교시 정보"));
+
+        // 현재 교시 수업 정보를 표시하는 라벨 생성
+        currentClassInfoLabel = new JLabel("현재 교시 정보가 여기에 표시됩니다.");
+        currentClassInfoLabel.setFont(new Font("맑은 고딕", Font.PLAIN, 20));
+        currentClassInfoLabel.setHorizontalAlignment(SwingConstants.LEFT); // 왼쪽 정렬 설정
+
+        // infoPanel에 라벨 추가
+        infoPanel.add(currentClassInfoLabel, BorderLayout.WEST);
+
+        // 기존 scrollPane 아래에 infoPanel 추가
+        contentPane.add(infoPanel, BorderLayout.WEST);
     }
 
     // 데이터베이스 연결 설정 메서드
@@ -276,21 +295,70 @@ public class professor_button2 extends JFrame {
         // 새로운 렌더러 적용
         for (int i = 0; i < lectureTable.getRowCount(); i++) {
             for (int j = 0; j < lectureTable.getColumnCount(); j++) {
-                lectureTable.getColumnModel().getColumn(j).setCellRenderer(new DefaultTableCellRenderer()); // 기본 셀 렌더러로 초기화
+                lectureTable.getColumnModel().getColumn(j).setCellRenderer(new DefaultTableCellRenderer());
             }
         }
 
-        if (currentDayIndex != -1) { // 현재 요일이 유효한 경우
+        String currentClassInfo = "수업 없음"; // 기본값을 "수업 없음"으로 설정
+
+        if (currentDayIndex != -1) {
             lectureTable.getColumnModel().getColumn(currentDayIndex)
-                    .setCellRenderer(new CustomRenderer(Color.PINK, -1)); // 현재 요일 컬럼 강조
+                    .setCellRenderer(new CustomRenderer(Color.PINK, -1));
         }
-        if (currentPeriod != -1 && currentDayIndex != -1) { // 현재 교시와 요일이 유효한 경우
+        if (currentPeriod != -1 && currentDayIndex != -1) {
             lectureTable.getColumnModel().getColumn(currentDayIndex)
                     .setCellRenderer(new CustomRenderer(Color.PINK, currentPeriod));
             lectureTable.getColumnModel().getColumn(currentDayIndex)
-                    .setCellRenderer(new CustomRenderer(Color.RED, currentPeriod, currentDayIndex)); // 현재 교시와 요일 셀 강조
+                    .setCellRenderer(new CustomRenderer(Color.RED, currentPeriod, currentDayIndex));
+
+            // 현재 수업 정보를 업데이트
+            Object currentClass = lectureTable.getValueAt(currentPeriod, currentDayIndex);
+            if (currentClass != null && !currentClass.toString().isEmpty()) {
+                currentClassInfo = "현재 수업: " + currentClass.toString() + ", 강의실 위치: "; // 강의실 위치를 추가해야 함
+                try {
+                    String roomQuery = "SELECT Room_Number FROM DB2024_Lecture WHERE Lecture_Name = ? AND (Lecture_Time1 = ? OR Lecture_Time2 = ?)";
+                    PreparedStatement roomStmt = connection.prepareStatement(roomQuery);
+                    roomStmt.setString(1, currentClass.toString());
+                    roomStmt.setString(2, getTimeString(currentDayIndex, currentPeriod));
+                    roomStmt.setString(3, getTimeString(currentDayIndex, currentPeriod));
+                    ResultSet roomRs = roomStmt.executeQuery();
+                    if (roomRs.next()) {
+                        currentClassInfo += roomRs.getString("Room_Number");
+                    } else {
+                        currentClassInfo += "정보 없음";
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
         }
-        lectureTable.repaint(); // 테이블 다시 그리기
+
+        currentClassInfoLabel.setText(currentClassInfo); // 현재 수업 정보를 라벨에 설정
+
+        lectureTable.repaint();
+    }
+
+    // 요일과 교시를 문자열로 반환하는 헬퍼 메서드
+    private String getTimeString(int dayIndex, int period) {
+        String day = "";
+        switch (dayIndex) {
+            case 1:
+                day = "월";
+                break;
+            case 2:
+                day = "화";
+                break;
+            case 3:
+                day = "수";
+                break;
+            case 4:
+                day = "목";
+                break;
+            case 5:
+                day = "금";
+                break;
+        }
+        return day + (period + 1);
     }
 
     // 사용자 정의 렌더러 클래스
