@@ -1,7 +1,6 @@
+package student;
 
 //원하는 공간을 찾기 위한 코드
-
-package student;
 
 import java.awt.BorderLayout;
 import java.awt.Color;

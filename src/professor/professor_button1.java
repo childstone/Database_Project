@@ -345,32 +345,25 @@ public class professor_button1 extends JFrame {
     private void searchClassroom_ExternalInfo(String seats, boolean content, boolean project, boolean reservation, boolean recording, boolean practicable) {
         StringBuilder warnMessage = new StringBuilder();
 
-        //3중 if문으로 3가지 체크박스 선택할 경우 처리
         if (recording) {
-            warnMessage.append("녹화를 원한다면 교실을 선택해 주세요.");
-            if (project) {
-                warnMessage.append("\n빔프로젝트를 원한다면 교실을 선택해 주세요.");
-                if (practicable) {
-                    warnMessage.append("\n실습을 원한다면 교실을 선택해 주세요.");
-                }
-            } else if (project) {
-                warnMessage.append("빔프로젝트를 원한다면 교실을 선택해 주세요.");
-                if (practicable) {
-                    warnMessage.append("\n실습을 원한다면 교실을 선택해 주세요.");
-                }
-            } else if (practicable) {
-                warnMessage.append("실습을 원한다면 교실을 선택해 주세요.");
-            }
-
-            if (warnMessage.length() > 0) {
-                infoArea.setText(warnMessage.toString().trim());
-                return;
-            }
-
-            String query = buildQuery(content, project, reservation, recording, practicable, 1, cameraType); // 카메라 유형 추가하여 쿼리 생성
-            executeQuery(seats, query, 1); // 쿼리 실행
+            warnMessage.append("녹화를 원한다면 교실을 선택해 주세요.\n");
         }
+        if (project) {
+            warnMessage.append("빔프로젝트를 원한다면 교실을 선택해 주세요.\n");
+        }
+        if (practicable) {
+            warnMessage.append("실습을 원한다면 교실을 선택해 주세요.\n");
+        }
+
+        if (warnMessage.length() > 0) {
+            infoArea.setText(warnMessage.toString().trim());
+            return;
+        }
+
+        String query = buildQuery(content, false, false, false, false, 1, "선택"); // content 조건만 고려하여 쿼리 생성
+        executeQuery(seats, query, 1); // 쿼리 실행
     }
+
 
 
 
@@ -404,14 +397,14 @@ public class professor_button1 extends JFrame {
                     if (hasCondition) {
                         query.append(" AND");
                     }
-                    query.append(" ReservationRequired='예약 필요'");
+                    query.append(" Reservation_Required='예약 필요'");
                     hasCondition = true;
                 }
                 if (recording) {
                     if (hasCondition) {
                         query.append(" AND");
                     }
-                    query.append(" RecordingAvailable='가능'");
+                    query.append(" Recording_Available='가능'");
                     hasCondition = true;
                 }
                 if (!cameraType.equals("선택")) {

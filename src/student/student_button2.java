@@ -169,44 +169,67 @@ public class student_button2 extends JFrame{
         String dbUser = "DB2024Team05";
         String dbPass = "DB2024Team05";
 
-        //학수번호와 함께 받아와기에 분리해주기
+        // 학수번호와 함께 받아와서 분리
         String[] parts = lectureNumber.split("-");
         if (parts.length != 2) {
             JOptionPane.showMessageDialog(this, "입력값을 확인하세요");
-            return;//두 개로 분리가 안 된경우 처리하는 법
+            return; // 입력이 올바르게 분리되지 않은 경우
         }
 
-        String query = "SELECT Lecture_Name,Room_Number,Room_Name,Location FROM DB2024_LectureView ";
-        if(isInteger(parts[0])) query+="WHERE Lecture_Num = ? AND Class_Num = ?";
-        else query+="WHERE Lecture_Name=? AND Class_Num = ?";
-        //사용자로부터 받아온 강의번호와 학수번호를 통해서 원하는 정보 검색
+        // 서브 쿼리를 사용하여 해당 강의실의 추가적인 특성 정보를 조회하는 쿼리
+        String query = "SELECT * FROM DB2024_ClassroomView " +
+                "WHERE Room_Number = (SELECT Room_Number FROM DB2024_LectureView ";
+        if (isInteger(parts[0])) {
+            query += "WHERE Lecture_Num = ? AND Class_Num = ?)";
+        } else {
+            query += "WHERE Lecture_Name = ? AND Class_Num = ?)";
+        }
 
         try (Connection conn = DriverManager.getConnection(dbUrl, dbUser, dbPass);
              PreparedStatement stmt = conn.prepareStatement(query)) {
-            //DBD연결을 맺고 쿼리를 실행
-
             stmt.setString(1, parts[0]); // Lecture_Num or Lecture_Name
             stmt.setString(2, parts[1]); // Class_Num
+
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    String lecture_name=rs.getString("Lecture_Name");
                     String roomNumber = rs.getString("Room_Number");
-                    String Room_name = rs.getString("Room_Name");
-                    String Location = rs.getString("Location");
-                    infoArea.setText("강의 이름: "+lecture_name+"\n강의실 번호: "+roomNumber+"\n강의실 이름: "+Room_name+"\n강의실 위치: "+Location);
+                    String roomName = rs.getString("Room_Name");
+                    String location = rs.getString("Location");
+                    int seatCount = rs.getInt("Seat_Count");
+                    String projector = rs.getString("Projector");
+                    String reservationRequired = rs.getString("Reservation_Required");
+                    int outletCount = rs.getInt("Outlet_Count");
+
+                    if (isInteger(parts[0])) {
+                        infoArea.setText("강의실 번호: " + roomNumber +  "\n강의실 이름: " + roomName +
+                                "\n강의실 위치: " + location +
+                                "\n좌석 수: " + seatCount +
+                                "\n프로젝터: " + projector +
+                                "\n예약 필요: " + reservationRequired +
+                                "\n콘센트 개수: " + outletCount);
+                    } else {
+                        infoArea.setText("강의실 번호: " + roomNumber +
+                                "\n강의실 이름: " + roomName +
+                                "\n강의실 위치: " + location +
+                                "\n좌석 수: " + seatCount +
+                                "\n프로젝터: " + projector +
+                                "\n예약 필요: " + reservationRequired +
+                                "\n콘센트 개수: " + outletCount);
+                    }
+
                 } else {
-                    JOptionPane.showMessageDialog(this, "입력을 다시 확인하세요");//테이블 결과 검색되지 않는 경우
+                    JOptionPane.showMessageDialog(this, "해당 강의실의 추가 정보를 찾을 수 없습니다.");
                 }
             }
         } catch (SQLException ex) {
-            //DB와 연결에서 문제가 생기는 경우
             ex.printStackTrace();
             JOptionPane.showMessageDialog(this, "Database error: " + ex.getMessage());
         }
-
-
-
     }
+
+
+
+
     //학수번호를 입력한 것인지 확인하기 위한 문자열의 숫자 구성 판단 함수
     public boolean isInteger(String strValue){
         try {
